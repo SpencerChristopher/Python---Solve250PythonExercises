@@ -4,7 +4,7 @@
 This repository is a colleciton of exercises from the Udemy Python - Solve 250 Python Exercises course by [EpicPython Academy](https://mms.udemy.com/user/inteldev-technologies/).
 
 
-The project will have individual exicuatable files for each excercise and shuold be exteneded to include assumed test cases for the exercises for the solutions in the project. 
+The project will have individual exicuatable files for each excercise and should be exteneded to include assumed test cases for the exercises for the solutions in the project. 
 #### Structure of the project 
 ```
 ¦--- Root project files
