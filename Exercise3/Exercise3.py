@@ -45,7 +45,8 @@ def main():
         for file_path in resource_files:
             current_target, source_fields = extract_target_fields(file_path)
             if current_target == target_field:
-                result[file_path] = source_fields
+                # Append source_fields to the existing list (if any)
+                result[file_path] = result.get(file_path, []) + source_fields
 
         if result:
             print(json.dumps({target_field: result}, indent=4))
