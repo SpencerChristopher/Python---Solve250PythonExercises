@@ -3,15 +3,6 @@ import json
 import argparse
 
 def fetch_resource_files(extraction_path):
-    """
-    Fetches a list of resource files in the extraction directory.
-
-    Parameters:
-    - extraction_path (str): Path to the extraction directory.
-
-    Returns:
-    - list: List of resource files.
-    """
     try:
         resource_files = []
         for root, dirs, files in os.walk(extraction_path):
@@ -24,24 +15,15 @@ def fetch_resource_files(extraction_path):
         return []
 
 def extract_target_fields(file_path):
-    """
-    Extracts target fields and associated source fields from a JSON file.
-
-    Parameters:
-    - file_path (str): Path to the JSON file.
-
-    Returns:
-    - dict: Mapping of target field with associated files and source fields.
-    """
     try:
         with open(file_path, 'r') as json_file:
             data = json.load(json_file)
             target_field = data.get('target_field', '')
             source_fields = data.get('source_field', [])
-            return {target_field: source_fields}
+            return target_field, source_fields
     except Exception as e:
         print(f"Error extracting target fields from {file_path}: {e}")
-        return {}
+        return None, None
 
 def main():
     parser = argparse.ArgumentParser(description="Script for extracting and auditing target fields in an extraction directory.")
@@ -61,10 +43,12 @@ def main():
 
         result = {}
         for file_path in resource_files:
-            result.update(extract_target_fields(file_path))
+            current_target, source_fields = extract_target_fields(file_path)
+            if current_target == target_field:
+                result[file_path] = source_fields
 
-        if target_field in result:
-            print(json.dumps({target_field: result[target_field]}, indent=4))
+        if result:
+            print(json.dumps({target_field: result}, indent=4))
         else:
             print(f"No matching files found for target field: {target_field}")
 
@@ -77,7 +61,11 @@ def main():
 
         mapping = {}
         for file_path in resource_files:
-            mapping.update(extract_target_fields(file_path))
+            current_target, source_fields = extract_target_fields(file_path)
+            if current_target:
+                if current_target not in mapping:
+                    mapping[current_target] = {}
+                mapping[current_target][file_path] = source_fields
 
         # Write the mapping to the output file
         with open('target_fields_mapping.json', 'w') as output_json:
