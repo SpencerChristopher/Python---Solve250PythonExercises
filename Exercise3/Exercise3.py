@@ -32,7 +32,25 @@ def fetch_resource_files(extraction_path, channel):
         print(f"Error fetching resource files: {e}")
         return []
 
-# ... (rest of the code remains unchanged)
+def extract_target_fields_in_channel(file_path):
+    """
+    Extracts target fields and associated source fields from a JSON file.
+
+    Parameters:
+    - file_path (str): Path to the JSON file.
+
+    Returns:
+    - tuple: Tuple containing target field and source fields.
+    """
+    try:
+        with open(file_path, 'r') as json_file:
+            data = json.load(json_file)
+            target_field = data.get('target_field', '')
+            source_fields = data.get('source_field', [])
+            return target_field, source_fields
+    except Exception as e:
+        print(f"Error extracting target fields from {file_path}: {e}")
+        return None, None
 
 def get_channel_files(extraction_path, channel):
     """
