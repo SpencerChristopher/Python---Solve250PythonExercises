@@ -3,6 +3,15 @@ import json
 import argparse
 
 def fetch_resource_files(extraction_path):
+    """
+    Fetches a list of resource files in the extraction directory.
+
+    Parameters:
+    - extraction_path (str): Path to the extraction directory.
+
+    Returns:
+    - list: List of resource files.
+    """
     try:
         resource_files = []
         for root, dirs, files in os.walk(extraction_path):
@@ -15,17 +24,29 @@ def fetch_resource_files(extraction_path):
         return []
 
 def extract_target_fields(file_path):
+    """
+    Extracts target fields and associated source fields from a JSON file.
+
+    Parameters:
+    - file_path (str): Path to the JSON file.
+
+    Returns:
+    - tuple: Tuple containing target field and source fields.
+    """
     try:
-        with open(file_path, 'r') as json_file:
+        with open(file_path, 'r', encoding='utf-8') as json_file:
             data = json.load(json_file)
             target_field = data.get('target_field', '')
-            source_fields = data.get('source_field', [])
+            source_fields = data.get('source_fields', [])
             return target_field, source_fields
     except Exception as e:
         print(f"Error extracting target fields from {file_path}: {e}")
         return None, None
 
 def main():
+    """
+    Main function for extracting and auditing target fields in an extraction directory.
+    """
     parser = argparse.ArgumentParser(description="Script for extracting and auditing target fields in an extraction directory.")
     parser.add_argument("--find", type=str, help="Find a target field in the extraction directory.")
     parser.add_argument("--audit", action="store_true", help="Create a file with all target fields and their associated files and source fields.")
