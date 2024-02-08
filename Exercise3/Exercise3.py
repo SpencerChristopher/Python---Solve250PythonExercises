@@ -2,6 +2,10 @@ import os
 import json
 import argparse
 
+import os
+import json
+import argparse
+
 def fetch_resource_files(extraction_path, channel):
     """
     Fetches a list of resource files in the extraction directory based on the specified channel.
@@ -24,8 +28,13 @@ def fetch_resource_files(extraction_path, channel):
             # Include channel-specific resources folders based on the provided channels
             channels = [c.strip().upper() for c in channel.split(',')]
             for ch in channels:
-                channel_folder = os.path.join(extraction_path, f"resources_{ch}")
-                resource_files += [os.path.join(root, file) for root, dirs, files in os.walk(channel_folder) for file in files if file.endswith(".json")]
+                if ch == 'DE':
+                    # For 'DE' without a specific channel folder, include 'resources' folder
+                    resource_files += [os.path.join(root, file) for root, dirs, files in os.walk(os.path.join(extraction_path, 'resources')) for file in files if file.endswith(".json")]
+                else:
+                    # Include channel-specific resources folders based on the provided channels
+                    channel_folder = os.path.join(extraction_path, f"resources_{ch}")
+                    resource_files += [os.path.join(root, file) for root, dirs, files in os.walk(channel_folder) for file in files if file.endswith(".json")]
 
         return resource_files
     except Exception as e:
