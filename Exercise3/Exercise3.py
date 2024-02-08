@@ -3,37 +3,21 @@ import json
 import argparse
 
 def fetch_resource_files(extraction_path, channel):
-    """
-    Fetches a list of resource files in the extraction directory.
-
-    Parameters:
-    - extraction_path (str): Path to the extraction directory.
-    - channel (str): Channel prefix.
-
-    Returns:
-    - list: List of resource files.
-    """
     try:
         resource_files = []
         for root, dirs, files in os.walk(extraction_path):
             for file in files:
-                if file.endswith(".json") and f"resources_{channel.upper()}" in root:
-                    resource_files.append(os.path.join(root, file))
+                if file.endswith(".json"):
+                    if channel.lower() == 'global' and 'resources' in root:
+                        resource_files.append(os.path.join(root, file))
+                    elif f"resources_{channel.upper()}" in root:
+                        resource_files.append(os.path.join(root, file))
         return resource_files
     except Exception as e:
         print(f"Error fetching resource files: {e}")
         return []
 
 def extract_target_fields(file_path):
-    """
-    Extracts target fields and associated source fields from a JSON file.
-
-    Parameters:
-    - file_path (str): Path to the JSON file.
-
-    Returns:
-    - tuple: Target field and list of source fields.
-    """
     try:
         with open(file_path, 'r') as json_file:
             data = json.load(json_file)
@@ -45,34 +29,12 @@ def extract_target_fields(file_path):
         return None, None
 
 def get_channel_files(extraction_path, channel):
-    """
-    Fetches a list of resource files in the extraction directory based on the specified channel.
-
-    Parameters:
-    - extraction_path (str): Path to the extraction directory.
-    - channel (str): Channel prefix.
-
-    Returns:
-    - list: List of resource files.
-    """
     if channel.lower() == 'global':
         return fetch_resource_files(extraction_path, 'global')
     else:
         return fetch_resource_files(extraction_path, channel)
 
 def generate_json_object(title, source_fields, target_field, file_name):
-    """
-    Generates a JSON object based on the specified parameters.
-
-    Parameters:
-    - title (str): Title for the JSON object.
-    - source_fields (list): List of source fields.
-    - target_field (str): Target field.
-    - file_name (str): Name of the extraction.json file.
-
-    Returns:
-    - dict: JSON object with the specified format.
-    """
     json_object = {
         "title": title,
         "source_fields": source_fields,
@@ -82,18 +44,6 @@ def generate_json_object(title, source_fields, target_field, file_name):
     return {target_field: {title: json_object}}
 
 def find_target_field(extraction_path, target_field, channel, output_to_terminal=True):
-    """
-    Finds the associated files and source fields for a given target field in the extraction directory.
-
-    Parameters:
-    - extraction_path (str): Path to the extraction directory.
-    - target_field (str): Target field to search for.
-    - channel (str): Channel prefix.
-    - output_to_terminal (bool): Whether to print the result to the terminal.
-
-    Returns:
-    - dict: Mapping of target field with associated files and source fields.
-    """
     result = {}
     channels = channel.split(',')
     for current_channel in channels:
@@ -109,23 +59,21 @@ def find_target_field(extraction_path, target_field, channel, output_to_terminal
                 title = os.path.splitext(os.path.basename(file_path))[0]
                 result.update(generate_json_object(title, source_fields, target_field, file_path))
 
+    if not result and output_to_terminal:
+        print(f"No matching files found for target field: {target_field}")
+        exit()
+
     if output_to_terminal:
-        if result:
-            print(json.dumps(result, indent=4))
-        else:
-            print(f"No matching files found for target field: {target_field}")
+        print(json.dumps(result, indent=4))
     else:
-        return result
+        try:
+            with open(f'target_fields_mapping_{channel}.json', 'w') as output_json:
+                json.dump(result, output_json, indent=4)
+            print(f"Audit completed. Check 'target_fields_mapping_{channel}.json' for the results.")
+        except Exception as e:
+            print(f"Error writing to file: {e}")
 
 def audit_target_fields(extraction_path, channel, output_to_terminal=True):
-    """
-    Creates a file with all target fields and their associated files and source fields in the extraction directory.
-
-    Parameters:
-    - extraction_path (str): Path to the extraction directory.
-    - channel (str): Channel prefix.
-    - output_to_terminal (bool): Whether to print the result to the terminal.
-    """
     result = {}
     channels = channel.split(',')
     for current_channel in channels:
@@ -141,20 +89,21 @@ def audit_target_fields(extraction_path, channel, output_to_terminal=True):
                 title = os.path.splitext(os.path.basename(file_path))[0]
                 result.update(generate_json_object(title, source_fields, current_target, file_path))
 
+    if not result and output_to_terminal:
+        print("No matching files found.")
+        exit()
+
     if output_to_terminal:
-        if result:
-            print(json.dumps(result, indent=4))
-        else:
-            print("No matching files found.")
+        print(json.dumps(result, indent=4))
     else:
-        with open(f'target_fields_mapping_{channel}.json', 'w') as output_json:
-            json.dump(result, output_json, indent=4)
-        print(f"Audit completed. Check 'target_fields_mapping_{channel}.json' for the results.")
+        try:
+            with open(f'target_fields_mapping_{channel}.json', 'w') as output_json:
+                json.dump(result, output_json, indent=4)
+            print(f"Audit completed. Check 'target_fields_mapping_{channel}.json' for the results.")
+        except Exception as e:
+            print(f"Error writing to file: {e}")
 
 def main():
-    """
-    Main function to parse command line arguments and execute the specified operation.
-    """
     parser = argparse.ArgumentParser(description="Script for extracting and auditing target fields in an extraction directory.")
     parser.add_argument("--find", type=str, help="Find a target field in the extraction directory. Example: --find prod_feat1234")
     parser.add_argument("--audit", action="store_true", help="Create a file with all target fields and their associated files and source fields.")
@@ -168,11 +117,23 @@ def main():
     channels = args.channel.split(',') if args.channel else ['global']
     output_to_terminal = args.output.lower() == "terminal"
 
+    found_target = False
     for channel in channels:
-        if args.find:
-            find_target_field(extraction_path, target_field, channel, output_to_terminal)
-        elif args.audit:
-            audit_target_fields(extraction_path, channel, output_to_terminal)
+        try:
+            result = find_target_field(extraction_path, target_field, channel, output_to_terminal)
+            found_target = found_target or bool(result)
+        except Exception as e:
+            print(f"Error: {e}")
+
+    if not found_target and output_to_terminal:
+        print(f"No matching files found for target field: {target_field}")
+
+    elif args.audit:
+        for channel in channels:
+            try:
+                audit_target_fields(extraction_path, channel, output_to_terminal)
+            except Exception as e:
+                print(f"Error: {e}")
 
 if __name__ == '__main__':
     main()
