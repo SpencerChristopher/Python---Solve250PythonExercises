@@ -3,6 +3,16 @@ import json
 import argparse
 
 def fetch_resource_files(extraction_path, channel):
+    """
+    Fetches a list of resource files in the extraction directory based on the specified channel.
+
+    Parameters:
+    - extraction_path (str): Path to the extraction directory.
+    - channel (str): The channel to access.
+
+    Returns:
+    - list: List of resource files.
+    """
     try:
         resource_files = []
         channel_prefix = f"resources_{channel}" if channel else "resources"
@@ -17,6 +27,15 @@ def fetch_resource_files(extraction_path, channel):
         return []
 
 def extract_target_fields_in_channel(file_path):
+    """
+    Extracts target fields and associated source fields from a JSON file.
+
+    Parameters:
+    - file_path (str): Path to the JSON file.
+
+    Returns:
+    - tuple: Tuple containing target field and source fields.
+    """
     try:
         with open(file_path, 'r') as json_file:
             data = json.load(json_file)
@@ -28,6 +47,9 @@ def extract_target_fields_in_channel(file_path):
         return None, None
 
 def main():
+    """
+    Main function for extracting and auditing target fields in an extraction directory.
+    """
     parser = argparse.ArgumentParser(description="Script for extracting and auditing target fields in an extraction directory.")
     parser.add_argument("--find", type=str, help="Find a target field in the extraction directory.")
     parser.add_argument("--audit", action="store_true", help="Create a file with all target fields and their associated files and source fields.")
