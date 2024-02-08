@@ -43,9 +43,12 @@ def generate_json_object(title, source_fields, target_field, file_name):
     }
     return {target_field: {title: json_object}}
 
+
 def find_target_field(extraction_path, target_field, channel, output_to_terminal=True):
     result = {}
     channels = channel.split(',')
+    found_target = False
+
     for current_channel in channels:
         resource_files = get_channel_files(extraction_path, current_channel)
 
@@ -58,8 +61,9 @@ def find_target_field(extraction_path, target_field, channel, output_to_terminal
             if current_target == target_field:
                 title = os.path.splitext(os.path.basename(file_path))[0]
                 result.update(generate_json_object(title, source_fields, target_field, file_path))
+                found_target = True
 
-    if not result and output_to_terminal:
+    if not found_target and output_to_terminal:
         print(f"No matching files found for target field: {target_field}")
         exit()
 
@@ -73,9 +77,12 @@ def find_target_field(extraction_path, target_field, channel, output_to_terminal
         except Exception as e:
             print(f"Error writing to file: {e}")
 
+
 def audit_target_fields(extraction_path, channel, output_to_terminal=True):
     result = {}
     channels = channel.split(',')
+    found_target = False
+
     for current_channel in channels:
         resource_files = get_channel_files(extraction_path, current_channel)
 
@@ -88,8 +95,9 @@ def audit_target_fields(extraction_path, channel, output_to_terminal=True):
             if current_target:
                 title = os.path.splitext(os.path.basename(file_path))[0]
                 result.update(generate_json_object(title, source_fields, current_target, file_path))
+                found_target = True
 
-    if not result and output_to_terminal:
+    if not found_target and output_to_terminal:
         print("No matching files found.")
         exit()
 
@@ -102,6 +110,7 @@ def audit_target_fields(extraction_path, channel, output_to_terminal=True):
             print(f"Audit completed. Check 'target_fields_mapping_{channel}.json' for the results.")
         except Exception as e:
             print(f"Error writing to file: {e}")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Script for extracting and auditing target fields in an extraction directory.")
