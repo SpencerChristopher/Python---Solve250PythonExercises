@@ -123,26 +123,37 @@ def main():
     extraction_path = '.'  # Set to the current working directory
 
     target_field = args.find
-    channels = args.channel.split(',') if args.channel else ['global']
+    channels = args.channel.split(',') if args.channel and args.channel.lower() != 'all' else ['global', 'DE', 'ES', 'IT', 'FR']  # Add other channels as needed
     output_to_terminal = args.output.lower() == "terminal"
 
-    found_target = False
-    for channel in channels:
-        try:
-            result = find_target_field(extraction_path, target_field, channel, output_to_terminal)
-            found_target = found_target or bool(result)
-        except Exception as e:
-            print(f"Error: {e}")
-
-    if not found_target and output_to_terminal:
-        print(f"No matching files found for target field: {target_field}")
-
-    elif args.audit:
-        for channel in channels:
+    if args.channel.lower() == 'all':
+        for current_channel in channels:
             try:
-                audit_target_fields(extraction_path, channel, output_to_terminal)
+                if args.find:
+                    find_target_field(extraction_path, target_field, current_channel, output_to_terminal)
+                elif args.audit:
+                    audit_target_fields(extraction_path, current_channel, output_to_terminal)
+            except Exception as e:
+                print(f"Error: {e}")
+    else:
+        found_target = False
+        for current_channel in channels:
+            try:
+                result = find_target_field(extraction_path, target_field, current_channel, output_to_terminal)
+                found_target = found_target or bool(result)
             except Exception as e:
                 print(f"Error: {e}")
 
+        if not found_target and output_to_terminal:
+            print(f"No matching files found for target field: {target_field}")
+
+        elif args.audit:
+            for current_channel in channels:
+                try:
+                    audit_target_fields(extraction_path, current_channel, output_to_terminal)
+                except Exception as e:
+                    print(f"Error: {e}")
+
 if __name__ == '__main__':
     main()
+
