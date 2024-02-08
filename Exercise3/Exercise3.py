@@ -23,11 +23,12 @@ def extract_target_fields(file_path):
         with open(file_path, 'r') as json_file:
             data = json.load(json_file)
             target_field = data.get('target_field', '')
-            source_fields = data.get('source_field', [])
-            return target_field, source_fields
+            source_fields = data.get('source_fields', [])
+            title = data.get('title', os.path.splitext(os.path.basename(file_path))[0])
+            return target_field, source_fields, title
     except Exception as e:
         print(f"Error extracting target fields from {file_path}: {e}")
-        return None, None
+        return None, None, None
 
 def generate_json_object(title, source_fields, target_field, file_name):
     json_object = {
@@ -59,9 +60,8 @@ def find_target_field(extraction_path, target_field, channel, output_to_terminal
             continue
 
         for file_path in resource_files:
-            current_target, source_fields = extract_target_fields(file_path)
+            current_target, source_fields, title = extract_target_fields(file_path)
             if current_target == target_field:
-                title = os.path.splitext(os.path.basename(file_path))[0]
                 update_result(result, title, source_fields, target_field, file_path)
                 found_target = True
 
@@ -92,9 +92,8 @@ def audit_target_fields(extraction_path, channel, output_to_terminal=True):
             continue
 
         for file_path in resource_files:
-            current_target, source_fields = extract_target_fields(file_path)
+            current_target, source_fields, title = extract_target_fields(file_path)
             if current_target:
-                title = os.path.splitext(os.path.basename(file_path))[0]
                 update_result(result, title, source_fields, current_target, file_path)
                 found_target = True
 
@@ -123,30 +122,21 @@ def main():
     extraction_path = '.'  # Set to the current working directory
 
     target_field = args.find
-    channels = args.channel.split(',') if args.channel and args.channel.lower() != 'all' else ['global', 'DE', 'ES', 'IT', 'FR']  # Add other channels as needed
-    output_to_terminal = args.output.lower() == "terminal"
+    channels = args.channel.split(',') if args.channel and args.channel.lower() != 'all' else []
 
-    if args.channel.lower() == 'all':
-        for current_channel in channels:
-            try:
-                if args.find:
-                    find_target_field(extraction_path, target_field, current_channel, output_to_terminal)
-                elif args.audit:
-                    audit_target_fields(extraction_path, current_channel, output_to_terminal)
-            except Exception as e:
-                print(f"Error: {e}")
-    else:
-        found_target = False
-        for current_channel in channels:
-            try:
-                result = find_target_field(extraction_path, target_field, current_channel, output_to_terminal)
-                if result:
-                    found_target = True
-            except Exception as e:
-                print(f"Error: {e}")
+    if args.find:
+        if not channels:
+            channels = ['global']
 
-        if not found_target and output_to_terminal:
-            print(f"No matching files found for target field: {target_field}")
+        for current_channel in channels:
+            find_target_field(extraction_path, target_field, current_channel, args.output == 'terminal')
+
+    elif args.audit:
+        if not channels:
+            channels = ['global']
+
+        for current_channel in channels:
+            audit_target_fields(extraction_path, current_channel, args.output == 'terminal')
 
 if __name__ == '__main__':
     main()
