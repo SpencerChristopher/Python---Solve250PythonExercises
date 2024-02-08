@@ -55,7 +55,10 @@ def get_channel_files(extraction_path, channel):
     Returns:
     - list: List of resource files.
     """
-    return fetch_resource_files(extraction_path, channel)
+    if channel.lower() == 'global':
+        return fetch_resource_files(extraction_path, 'global')
+    else:
+        return fetch_resource_files(extraction_path, channel)
 
 def generate_json_object(title, source_fields, target_field, file_name):
     """
@@ -92,17 +95,19 @@ def find_target_field(extraction_path, target_field, channel, output_to_terminal
     - dict: Mapping of target field with associated files and source fields.
     """
     result = {}
-    resource_files = get_channel_files(extraction_path, channel)
+    channels = channel.split(',')
+    for current_channel in channels:
+        resource_files = get_channel_files(extraction_path, current_channel)
 
-    if not resource_files:
-        print(f"No resource files found for channel: {channel}")
-        return result
+        if not resource_files:
+            print(f"No resource files found for channel: {current_channel}")
+            continue
 
-    for file_path in resource_files:
-        current_target, source_fields = extract_target_fields(file_path)
-        if current_target == target_field:
-            title = os.path.splitext(os.path.basename(file_path))[0]
-            result.update(generate_json_object(title, source_fields, target_field, file_path))
+        for file_path in resource_files:
+            current_target, source_fields = extract_target_fields(file_path)
+            if current_target == target_field:
+                title = os.path.splitext(os.path.basename(file_path))[0]
+                result.update(generate_json_object(title, source_fields, target_field, file_path))
 
     if output_to_terminal:
         if result:
@@ -122,17 +127,19 @@ def audit_target_fields(extraction_path, channel, output_to_terminal=True):
     - output_to_terminal (bool): Whether to print the result to the terminal.
     """
     result = {}
-    resource_files = get_channel_files(extraction_path, channel)
+    channels = channel.split(',')
+    for current_channel in channels:
+        resource_files = get_channel_files(extraction_path, current_channel)
 
-    if not resource_files:
-        print(f"No resource files found for channel: {channel}")
-        return
+        if not resource_files:
+            print(f"No resource files found for channel: {current_channel}")
+            continue
 
-    for file_path in resource_files:
-        current_target, source_fields = extract_target_fields(file_path)
-        if current_target:
-            title = os.path.splitext(os.path.basename(file_path))[0]
-            result.update(generate_json_object(title, source_fields, current_target, file_path))
+        for file_path in resource_files:
+            current_target, source_fields = extract_target_fields(file_path)
+            if current_target:
+                title = os.path.splitext(os.path.basename(file_path))[0]
+                result.update(generate_json_object(title, source_fields, current_target, file_path))
 
     if output_to_terminal:
         if result:
@@ -140,9 +147,9 @@ def audit_target_fields(extraction_path, channel, output_to_terminal=True):
         else:
             print("No matching files found.")
     else:
-        with open('target_fields_mapping.json', 'w') as output_json:
+        with open(f'target_fields_mapping_{channel}.json', 'w') as output_json:
             json.dump(result, output_json, indent=4)
-        print("Audit completed. Check 'target_fields_mapping.json' for the results.")
+        print(f"Audit completed. Check 'target_fields_mapping_{channel}.json' for the results.")
 
 def main():
     """
@@ -158,14 +165,14 @@ def main():
     extraction_path = '.'  # Set to the current working directory
 
     target_field = args.find
-    channel = args.channel or 'global'
+    channels = args.channel.split(',') if args.channel else ['global']
     output_to_terminal = args.output.lower() == "terminal"
 
-    if args.find:
-        find_target_field(extraction_path, target_field, channel, output_to_terminal)
-
-    elif args.audit:
-        audit_target_fields(extraction_path, channel, output_to_terminal)
+    for channel in channels:
+        if args.find:
+            find_target_field(extraction_path, target_field, channel, output_to_terminal)
+        elif args.audit:
+            audit_target_fields(extraction_path, channel, output_to_terminal)
 
 if __name__ == '__main__':
     main()
