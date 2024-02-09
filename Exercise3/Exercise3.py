@@ -8,7 +8,9 @@ def fetch_resource_files(extraction_path, channel):
         for root, dirs, files in os.walk(extraction_path):
             if channel.lower() == 'global':
                 if 'resources' in root and files:
-                    resource_files.append(os.path.join(root, files[0]))
+                    for file in files:
+                        if file.endswith(".json"):
+                            resource_files.append(os.path.join(root, file))
             elif channel.lower() in root:
                 for file in files:
                     if file.endswith(".json"):
@@ -17,7 +19,6 @@ def fetch_resource_files(extraction_path, channel):
     except Exception as e:
         print(f"Error fetching resource files: {e}")
         return []
-
 def extract_target_fields(file_path):
     try:
         with open(file_path, 'r') as json_file:
