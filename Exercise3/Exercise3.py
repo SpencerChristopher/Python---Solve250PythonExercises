@@ -1,24 +1,36 @@
 import os
 import json
 import argparse
+import os
+
 
 def fetch_resource_files(extraction_path, channel):
     try:
         resource_files = []
-        for root, dirs, files in os.walk(extraction_path):
-            if channel.lower() == 'global':
-                if 'resources' in root and files:
-                    for file in files:
-                        if file.endswith(".json"):
-                            resource_files.append(os.path.join(root, file))
-            elif channel.lower() in root:
+
+        if channel.lower() in ['global', 'de']:
+            # If the channel is 'global' or 'DE', get all .json files in the 'resources' folder
+            resources_folder = os.path.join(extraction_path, 'resources')
+            for root, dirs, files in os.walk(resources_folder):
                 for file in files:
                     if file.endswith(".json"):
                         resource_files.append(os.path.join(root, file))
+        else:
+            # For other channels, look for a channel-specific folder
+            channel_folder = f'resources_{channel.upper()}'
+            channel_path = os.path.join(extraction_path, channel_folder)
+            if os.path.exists(channel_path):
+                for root, dirs, files in os.walk(channel_path):
+                    for file in files:
+                        if file.endswith(".json"):
+                            resource_files.append(os.path.join(root, file))
+
         return resource_files
     except Exception as e:
         print(f"Error fetching resource files: {e}")
         return []
+
+
 def extract_target_fields(file_path):
     try:
         with open(file_path, 'r') as json_file:
