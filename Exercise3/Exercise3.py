@@ -146,21 +146,18 @@ def main():
     args = parser.parse_args()
 
     extraction_path = '.'  # Set to the current working directory
-
     target_field = args.find
     channels = args.channel.split(',') if args.channel and args.channel.lower() != 'all' else []
 
     if args.find:
         if not channels:
             channels = ['global']
-
         for current_channel in channels:
             find_target_field(extraction_path, target_field, current_channel, args.output == 'terminal')
 
     elif args.audit:
         if not channels:
             channels = ['global']
-
         for current_channel in channels:
             audit_target_fields(extraction_path, current_channel, args.output == 'terminal')
 
