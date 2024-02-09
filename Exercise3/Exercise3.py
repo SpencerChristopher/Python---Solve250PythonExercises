@@ -43,7 +43,6 @@ def fetch_resource_files(extraction_path, channel):
         return []
 
 
-
 def extract_target_fields(file_path):
     try:
         with open(file_path, 'r') as json_file:
