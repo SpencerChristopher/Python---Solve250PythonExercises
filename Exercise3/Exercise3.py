@@ -87,6 +87,8 @@ def find_target_field(extraction_path, target_field, channel, output_to_terminal
 
         for file_path in resource_files:
             current_target, source_fields, title = extract_target_fields(file_path)
+            print(f"Checking file: {file_path}, Target: {current_target}, Channel: {current_channel}")
+
             if current_target == target_field:
                 update_result(result, title, source_fields, target_field, file_path)
                 found_target = True
