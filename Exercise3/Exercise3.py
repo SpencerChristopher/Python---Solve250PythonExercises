@@ -8,17 +8,19 @@ def fetch_resource_files(extraction_path, channel):
         resource_files = []
 
         if channel.lower() == 'all':
-            # Fetch all .json files from all 'resources' and 'resources_*' folders
+            # Fetch all .json files from 'resources' and 'resources_*' folders
             for root, dirs, files in os.walk(extraction_path):
                 for folder in dirs:
                     folder_path = os.path.join(root, folder)
 
-                    # Check if the folder starts with 'resources' and contains at least one .json file
-                    if folder.startswith('resources') and any(
-                            file.endswith(".json") for file in os.listdir(folder_path)):
-                        # Add all .json files to the resource_files list
-                        resource_files.extend([os.path.join(folder_path, file) for file in os.listdir(folder_path) if
-                                               file.endswith(".json")])
+                    # Check if the folder is 'resources' or starts with 'resources_'
+                    if folder == 'resources' or folder.startswith('resources_'):
+                        # Check if the folder contains at least one .json file
+                        if any(file.endswith(".json") for file in os.listdir(folder_path)):
+                            # Add all .json files to the resource_files list
+                            resource_files.extend(
+                                [os.path.join(folder_path, file) for file in os.listdir(folder_path) if
+                                 file.endswith(".json")])
         elif channel.lower() in ['global', 'de']:
             # If the channel is 'global' or 'DE', get all .json files in the 'resources' folder
             resources_folder = os.path.join(extraction_path, 'resources')
