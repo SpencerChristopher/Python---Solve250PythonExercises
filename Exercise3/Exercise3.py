@@ -1,19 +1,16 @@
 import os
 import json
 import argparse
-import os
 
-
-import os
 
 def fetch_resource_files(extraction_path, channel):
     try:
         resource_files = []
 
         if channel.lower() == 'all':
-            # Fetch all .json files from all 'resources' folders
+            # Fetch all .json files from all 'resources' and 'resources_*' folders
             for root, dirs, files in os.walk(extraction_path):
-                if 'resources' in root and files:
+                if any(folder.startswith('resources') and files for folder in dirs):
                     resource_files.extend([os.path.join(root, file) for file in files if file.endswith(".json")])
         elif channel.lower() in ['global', 'de']:
             # If the channel is 'global' or 'DE', get all .json files in the 'resources' folder
