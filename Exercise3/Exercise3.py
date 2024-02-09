@@ -4,11 +4,18 @@ import argparse
 import os
 
 
+import os
+
 def fetch_resource_files(extraction_path, channel):
     try:
         resource_files = []
 
-        if channel.lower() in ['global', 'de']:
+        if channel.lower() == 'all':
+            # Fetch all .json files from all 'resources' folders
+            for root, dirs, files in os.walk(extraction_path):
+                if 'resources' in root and files:
+                    resource_files.extend([os.path.join(root, file) for file in files if file.endswith(".json")])
+        elif channel.lower() in ['global', 'de']:
             # If the channel is 'global' or 'DE', get all .json files in the 'resources' folder
             resources_folder = os.path.join(extraction_path, 'resources')
             for root, dirs, files in os.walk(resources_folder):
@@ -29,6 +36,7 @@ def fetch_resource_files(extraction_path, channel):
     except Exception as e:
         print(f"Error fetching resource files: {e}")
         return []
+
 
 
 def extract_target_fields(file_path):
