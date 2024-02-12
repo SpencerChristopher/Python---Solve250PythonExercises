@@ -67,18 +67,47 @@ def extract_target_fields(file_path):
         return None, None, None
 
 
-def write_json_to_file(file_path, data):
+def write_json_to_file(file_path, data, temp_folder=".temp"):
     """
     Writes JSON data to a file.
 
     Args:
         file_path (str): The path to the output JSON file.
         data (dict): The JSON data to write.
+        temp_folder (str): The folder to use for temporary files. Default is ".temp".
+
+    Raises:
+        FileNotFoundError: If the specified file path is not found.
+        PermissionError: If there are issues with file permissions.
+        Exception: For other unexpected errors during the file writing process.
+
+    Returns:
+        None
     """
     try:
-        with open(file_path, 'w') as output_json:
-            json.dump(data, output_json, indent=4)
-        print(f"Data written to {file_path}")
+        # Ensure the temp folder exists
+        if not os.path.exists(temp_folder):
+            os.makedirs(temp_folder)
+
+        # Check if the file already exists in the temp folder
+        temp_file_path = os.path.join(temp_folder, os.path.basename(file_path))
+        if os.path.exists(temp_file_path):
+            # Handle the case when the file already exists
+            user_input = input(f"The file '{temp_file_path}' already exists. Do you want to overwrite it? (y/n): ")
+            if user_input.lower() != 'y':
+                print("Operation aborted.")
+                return
+
+        # Write data to the temp file with UTF-8 encoding and ensure ASCII is False
+        with open(temp_file_path, 'w', encoding='utf-8', errors='ignore') as output_json:
+            json.dump(data, output_json, indent=4, ensure_ascii=False)
+
+        print(f"Data written to {temp_file_path}")
+
+    except FileNotFoundError as fnf_error:
+        print(f"Error: {fnf_error}. Please make sure the file path is valid.")
+    except PermissionError as pe_error:
+        print(f"Error: {pe_error}. Permission denied. Check file permissions.")
     except Exception as e:
         print(f"Error writing to file: {e}")
 
