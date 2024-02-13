@@ -1,14 +1,16 @@
 import json
 import argparse
 import os
+import glob
 
-def fetch_resource_files(extraction_path, channel):
+
+def fetch_resource_files(extraction_path, current_channel):
     """
     Fetches all extraction JSON files based on the specified channel.
 
     Args:
         extraction_path (str): The path to the extraction directory.
-        channel (str): The channel for which to fetch extraction files.
+        current_channel (str): The channel for which to fetch extraction files.
 
     Returns:
         list: A list of paths to extraction JSON files.
@@ -16,30 +18,25 @@ def fetch_resource_files(extraction_path, channel):
     try:
         extraction_files = []
 
-        if channel.lower() == 'all':
-            for root, dirs, files in os.walk(extraction_path):
-                for folder in dirs:
-                    folder_path = os.path.join(root, folder)
-                    if folder == 'resources' or folder.startswith('resources_'):
-                        if any(file.endswith(".json") for file in os.listdir(folder_path)):
-                            extraction_files.extend(
-                                [os.path.join(folder_path, file) for file in os.listdir(folder_path) if
-                                 file.endswith(".json")])
-        elif channel.lower() in ['global', 'de']:
-            resources_folder = os.path.join(extraction_path, 'resources')
-            for root, dirs, files in os.walk(resources_folder):
-                for file in files:
-                    if file.endswith(".json"):
-                        extraction_files.append(os.path.join(root, file))
-        else:
-            channel_folder = f'resources_{channel.upper()}'
-            channel_path = os.path.join(extraction_path, channel_folder)
-            if os.path.exists(channel_path):
-                for root, dirs, files in os.walk(channel_path):
-                    for file in files:
-                        if file.endswith(".json"):
-                            extraction_files.append(os.path.join(root, file))
+        # Use glob to get all .json files from folders starting with 'resources'
+        json_files_pattern = os.path.join(extraction_path, 'resources*', '*.json')
+        all_json_files = glob.glob(json_files_pattern)
+
+        # Loop through each file in all_json_files
+        for file_path in all_json_files:
+            try:
+                # Open the JSON file and load its content
+                with open(file_path, 'r') as json_file:
+                    data = json.load(json_file)
+
+                    # Check if current_channel is in the 'channel' array of the extraction JSON
+                    if current_channel in data.get('channel', []):
+                        extraction_files.append(file_path)
+            except Exception as e:
+                print(f"Error processing JSON file {file_path}: {e}")
+
         return extraction_files
+
     except Exception as e:
         print(f"Error fetching extraction files: {e}")
         return []
