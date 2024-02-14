@@ -111,18 +111,21 @@ def update_result(result, title, source_fields, target_field, file_name, channel
         channels (list): The channels from the extraction file.
     """
     if target_field not in result:
-        result[target_field] = {}
+        result[target_field] = {
+            "channels": set(),  # Use a set to avoid duplicates
+            "details": {}
+        }
+
+    result[target_field]["channels"].update(channels)
 
     for channel in channels:
-        if channel not in result[target_field]:
-            result[target_field][channel] = []
+        if channel not in result[target_field]["details"]:
+            result[target_field]["details"][channel] = {}
 
-        result[target_field][channel].append({
-            "title": title,
+        result[target_field]["details"][channel][title] = {
             "source_fields": source_fields,
             "file_name": file_name,
-        })
-
+        }
 
 
 def find_target_field(extraction_path, target_field, channel, output_to_terminal=True):
