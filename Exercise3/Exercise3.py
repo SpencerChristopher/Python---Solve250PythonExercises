@@ -64,20 +64,23 @@ def extract_target_fields(file_path):
         return None, None, None
 
 
-def write_json_to_file(file_path, data, temp_folder=".temp"):
+def write_json_to_file(file_path, data, operation_type, temp_folder=".temp"):
     try:
         # Ensure the temp folder exists
         if not os.path.exists(temp_folder):
             os.makedirs(temp_folder)
 
-        # Generate a filename with a timestamp, channel, and target field
+        # Generate a filename with timestamp, operation type, channel, and target field
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        channel = data[0].get('Channel', 'unknown_channel')
+        target_field = data[0].get('Target Field', 'unknown_target_field')
 
-        # Assuming 'data' is a dictionary with the expected keys
-        channel = data.get('metadata', {}).get('channel', 'unknown_channel')
-        target_field = data.get('metadata', {}).get('target_field', 'unknown_target_field')
-
-        filename = f"output_{timestamp}_{channel}_{target_field}.json"
+        if operation_type == 'find':
+            filename = f"{timestamp}_output_find_{channel}_{target_field}.json"
+        elif operation_type == 'audit':
+            filename = f"{timestamp}_output_audit_{channel}.json"
+        else:
+            filename = f"{timestamp}_output_{channel}_{target_field}.json"
 
         # Check if the file already exists in the temp folder
         temp_file_path = os.path.join(temp_folder, filename)
@@ -87,9 +90,22 @@ def write_json_to_file(file_path, data, temp_folder=".temp"):
                 print("Operation aborted.")
                 return
 
+        # Format data for easy import into Excel
+        formatted_data = [
+            {"Channel": entry['metadata']['channel'],
+             "Target Field": entry['metadata']['target_field'],
+             "Title": title,
+             "Source Fields": info['source_fields'],
+             "File Name": info['file_name']}
+            for entry in data.values()
+            for title, info in entry.items()
+        ]
+
         # Write data to the temp file with UTF-8 encoding and ensure ASCII is False
         with open(temp_file_path, 'w', encoding='utf-8', errors='ignore') as output_json:
-            json.dump(data, output_json, indent=4, ensure_ascii=False)
+            for item in formatted_data:
+                json.dump(item, output_json, ensure_ascii=False)
+                output_json.write('\n')  # Add a newline after each JSON object
 
         print(f"Data written to {temp_file_path}")
 
@@ -99,7 +115,6 @@ def write_json_to_file(file_path, data, temp_folder=".temp"):
         print(f"Error: {pe_error}. Permission denied. Check file permissions.")
     except Exception as e:
         print(f"Error writing to file: {e}")
-
 
 def update_result(result, title, source_fields, target_field, file_name, channels):
     """
