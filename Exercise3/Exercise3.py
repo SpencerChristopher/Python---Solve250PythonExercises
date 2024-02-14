@@ -2,7 +2,7 @@ import json
 import argparse
 import os
 import glob
-
+from datetime import datetime
 
 def fetch_resource_files(extraction_path, current_channel):
     """
@@ -64,9 +64,12 @@ def extract_target_fields(file_path):
         return None, None, None
 
 
+
+
+
 def write_json_to_file(file_path, data, temp_folder=".temp"):
     """
-    Writes JSON data to a file.
+    Writes JSON data to a file with a timestamp, channel, and target field in the filename.
 
     Args:
         file_path (str): The path to the output JSON file.
@@ -86,8 +89,14 @@ def write_json_to_file(file_path, data, temp_folder=".temp"):
         if not os.path.exists(temp_folder):
             os.makedirs(temp_folder)
 
+        # Generate a filename with a timestamp, channel, and target field
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        channel = data.get('metadata', {}).get('channel', 'unknown_channel')
+        target_field = data.get('metadata', {}).get('target_field', 'unknown_target_field')
+        filename = f"output_{timestamp}_{channel}_{target_field}.json"
+
         # Check if the file already exists in the temp folder
-        temp_file_path = os.path.join(temp_folder, os.path.basename(file_path))
+        temp_file_path = os.path.join(temp_folder, filename)
         if os.path.exists(temp_file_path):
             # Handle the case when the file already exists
             user_input = input(f"The file '{temp_file_path}' already exists. Do you want to overwrite it? (y/n): ")
@@ -107,6 +116,7 @@ def write_json_to_file(file_path, data, temp_folder=".temp"):
         print(f"Error: {pe_error}. Permission denied. Check file permissions.")
     except Exception as e:
         print(f"Error writing to file: {e}")
+
 
 
 def update_result(result, title, source_fields, target_field, file_name):
