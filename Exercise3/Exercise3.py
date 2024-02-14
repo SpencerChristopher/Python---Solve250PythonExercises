@@ -97,6 +97,13 @@ def write_json_to_file(file_path, data, temp_folder=".temp"):
     except Exception as e:
         print(f"Error writing to file: {e}")
 
+    except FileNotFoundError as fnf_error:
+        print(f"Error: {fnf_error}. Please make sure the file path is valid.")
+    except PermissionError as pe_error:
+        print(f"Error: {pe_error}. Permission denied. Check file permissions.")
+    except Exception as e:
+        print(f"Error writing to file: {e}")
+
 
 def update_result(result, title, source_fields, target_field, file_name, channels):
     """
