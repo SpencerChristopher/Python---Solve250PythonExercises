@@ -219,12 +219,18 @@ def format_target_field_results(result):
         list: A list of formatted output lines.
     """
     formatted_output = []
+
     for target_field, details in result.items():
-        formatted_output.append(f"Target Field: {target_field}")
-        for title, info in details.items():
-            formatted_output.append(f"  Title: {title}")
-            formatted_output.append(f"    Source Fields: {', '.join(info['source_fields'])}")
-            formatted_output.append(f"    File Name: {info['file_name']}")
+        formatted_output.append(f"========================================")
+        for channel, entries in details.get("details", {}).items():
+            formatted_output.append(f"  Channel: {channel}")
+            formatted_output.append(f"========================================")
+            for entry in entries.values():
+                formatted_output.append(f"    Title: {entry['title']}")
+                formatted_output.append(f"    Source Fields: {', '.join(entry['source_fields'])}")
+                formatted_output.append(f"    File Name: {entry['file_name']}")
+                formatted_output.append(f"    ----------------------------------------")
+
     return formatted_output
 
 
