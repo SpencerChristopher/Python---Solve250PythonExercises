@@ -64,23 +64,34 @@ def extract_target_fields(file_path):
         return None, None, None
 
 
-def write_json_to_file(file_path, data, operation_type, temp_folder=".temp"):
+
+
+def write_json_to_file(file_path, result, output_type="find", temp_folder=".temp"):
+    """
+    Writes JSON data to a file with a timestamp, channel, and target field in the filename.
+
+    Args:
+        file_path (str): The path to the output JSON file.
+        result (dict): The result dictionary to write.
+        output_type (str): Indicates whether the output is from "find" or "audit".
+        temp_folder (str): The folder to use for temporary files. Default is ".temp".
+
+    Raises:
+        FileNotFoundError: If the specified file path is not found.
+        PermissionError: If there are issues with file permissions.
+        Exception: For other unexpected errors during the file writing process.
+
+    Returns:
+        None
+    """
     try:
         # Ensure the temp folder exists
         if not os.path.exists(temp_folder):
             os.makedirs(temp_folder)
 
-        # Generate a filename with timestamp, operation type, channel, and target field
+        # Generate a filename with a timestamp and output type
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        channel = data[0].get('Channel', 'unknown_channel')
-        target_field = data[0].get('Target Field', 'unknown_target_field')
-
-        if operation_type == 'find':
-            filename = f"{timestamp}_output_find_{channel}_{target_field}.json"
-        elif operation_type == 'audit':
-            filename = f"{timestamp}_output_audit_{channel}.json"
-        else:
-            filename = f"{timestamp}_output_{channel}_{target_field}.json"
+        filename = f"output_{timestamp}_{output_type}.json"
 
         # Check if the file already exists in the temp folder
         temp_file_path = os.path.join(temp_folder, filename)
@@ -90,22 +101,24 @@ def write_json_to_file(file_path, data, operation_type, temp_folder=".temp"):
                 print("Operation aborted.")
                 return
 
-        # Format data for easy import into Excel
-        formatted_data = [
-            {"Channel": entry['metadata']['channel'],
-             "Target Field": entry['metadata']['target_field'],
-             "Title": title,
-             "Source Fields": info['source_fields'],
-             "File Name": info['file_name']}
-            for entry in data.values()
-            for title, info in entry.items()
-        ]
+        # Prepare data for writing to JSON
+        output_data = []
+
+        for target_field, details in result.items():
+            for channel, entries in details.get("details", {}).items():
+                for title, info in entries.items():
+                    record = {
+                        "Channel": channel,
+                        "Target Field": target_field,
+                        "Title": title,
+                        "Source Fields": info["source_fields"],
+                        "File Name": info["file_name"]
+                    }
+                    output_data.append(record)
 
         # Write data to the temp file with UTF-8 encoding and ensure ASCII is False
         with open(temp_file_path, 'w', encoding='utf-8', errors='ignore') as output_json:
-            for item in formatted_data:
-                json.dump(item, output_json, ensure_ascii=False)
-                output_json.write('\n')  # Add a newline after each JSON object
+            json.dump(output_data, output_json, indent=4, ensure_ascii=False, default=str)
 
         print(f"Data written to {temp_file_path}")
 
@@ -115,6 +128,9 @@ def write_json_to_file(file_path, data, operation_type, temp_folder=".temp"):
         print(f"Error: {pe_error}. Permission denied. Check file permissions.")
     except Exception as e:
         print(f"Error writing to file: {e}")
+
+# Example usage:
+# write_json_to_file("output.json", result_dict)
 
 def update_result(result, title, source_fields, target_field, file_name, channels):
     """
