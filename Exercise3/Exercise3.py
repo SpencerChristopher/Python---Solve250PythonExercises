@@ -221,8 +221,8 @@ def format_target_field_results(result):
     formatted_output = []
 
     for target_field, details in result.items():
-        formatted_output.append(f"========================================")
         for channel, entries in details.get("details", {}).items():
+            formatted_output.append(f"========================================")
             formatted_output.append(f"  Channel: {channel}")
             formatted_output.append(f"========================================")
             for entry in entries.values():
