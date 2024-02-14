@@ -72,8 +72,11 @@ def write_json_to_file(file_path, data, temp_folder=".temp"):
 
         # Generate a filename with a timestamp, channel, and target field
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        channel = data[0].get('Channel', 'unknown_channel')
-        target_field = data[0].get('Target Field', 'unknown_target_field')
+
+        # Assuming 'data' is a dictionary with the expected keys
+        channel = data.get('metadata', {}).get('channel', 'unknown_channel')
+        target_field = data.get('metadata', {}).get('target_field', 'unknown_target_field')
+
         filename = f"output_{timestamp}_{channel}_{target_field}.json"
 
         # Check if the file already exists in the temp folder
@@ -84,15 +87,18 @@ def write_json_to_file(file_path, data, temp_folder=".temp"):
                 print("Operation aborted.")
                 return
 
-        # Write data to the original file_path with UTF-8 encoding and ensure ASCII is False
-        with open(file_path, 'w', encoding='utf-8', errors='ignore') as output_json:
+        # Write data to the temp file with UTF-8 encoding and ensure ASCII is False
+        with open(temp_file_path, 'w', encoding='utf-8', errors='ignore') as output_json:
             json.dump(data, output_json, indent=4, ensure_ascii=False)
 
-        print(f"Data written to {file_path}")
+        print(f"Data written to {temp_file_path}")
 
+    except FileNotFoundError as fnf_error:
+        print(f"Error: {fnf_error}. Please make sure the file path is valid.")
+    except PermissionError as pe_error:
+        print(f"Error: {pe_error}. Permission denied. Check file permissions.")
     except Exception as e:
-        print(f"Error writing to file: {type(e).__name__} - {e}")
-
+        print(f"Error writing to file: {e}")
 
 
 def update_result(result, title, source_fields, target_field, file_name, channels):
