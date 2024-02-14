@@ -1,9 +1,9 @@
 import json
 import argparse
 import os
+import sys
 import glob
 from datetime import datetime
-
 def fetch_resource_files(extraction_path, current_channel):
     """
     Fetches all extraction JSON files based on the specified channel.
@@ -21,16 +21,17 @@ def fetch_resource_files(extraction_path, current_channel):
         # Use glob to get all .json files from folders starting with 'resources'
         json_files_pattern = os.path.join(extraction_path, 'resources*', '*.json')
         all_json_files = glob.glob(json_files_pattern)
-
+        if current_channel.lower() == 'all':
+            return all_json_files
         # Loop through each file in all_json_files
         for file_path in all_json_files:
             try:
                 # Open the JSON file and load its content
-                with open(file_path, 'r') as json_file:
+                with open(file_path, 'r',encoding='utf-8') as json_file:
                     data = json.load(json_file)
 
                     # Check if current_channel is in the 'channel' array of the extraction JSON
-                    if current_channel in data.get('channel', []):
+                    if current_channel.lower() in [channel.lower() for channel in data.get('channels', [])]:
                         extraction_files.append(file_path)
             except Exception as e:
                 print(f"Error processing JSON file {file_path}: {e}")
@@ -40,6 +41,7 @@ def fetch_resource_files(extraction_path, current_channel):
     except Exception as e:
         print(f"Error fetching extraction files: {e}")
         return []
+
 
 
 def extract_target_fields(file_path):
@@ -53,7 +55,7 @@ def extract_target_fields(file_path):
         tuple: A tuple containing target field, source fields, and title.
     """
     try:
-        with open(file_path, 'r') as json_file:
+        with open(file_path, 'r', encoding='utf-8') as json_file:
             data = json.load(json_file)
             target_field = data.get('target_field', '')
             source_fields = data.get('source_fields', [])
@@ -64,9 +66,7 @@ def extract_target_fields(file_path):
         return None, None, None
 
 
-
-
-def write_json_to_file(file_path, result, output_type="find", temp_folder=".temp"):
+def write_json_to_file(file_path, result, output_type="find", temp_folder="temp"):
     """
     Writes JSON data to a file with a timestamp, channel, and target field in the filename.
 
@@ -91,7 +91,8 @@ def write_json_to_file(file_path, result, output_type="find", temp_folder=".temp
 
         # Generate a filename with a timestamp and output type
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"output_{timestamp}_{output_type}.json"
+        channel = result.get('channels', 'unknown')
+        filename = f"output_{timestamp}_{channel}.json"
 
         # Check if the file already exists in the temp folder
         temp_file_path = os.path.join(temp_folder, filename)
@@ -129,8 +130,7 @@ def write_json_to_file(file_path, result, output_type="find", temp_folder=".temp
     except Exception as e:
         print(f"Error writing to file: {e}")
 
-# Example usage:
-# write_json_to_file("output.json", result_dict)
+
 
 def update_result(result, title, source_fields, target_field, file_name, channels):
     """
@@ -189,7 +189,8 @@ def find_target_field(extraction_path, target_field, channel, output_to_terminal
         for file_path in extraction_files:
             current_target, source_fields, title = extract_target_fields(file_path)
             if current_target == target_field:
-                update_result(result, title, source_fields, target_field, file_path)
+
+                update_result(result, title, source_fields, target_field, file_path, [current_channel])
                 found_target = True
 
     if not found_target and output_to_terminal:
@@ -201,7 +202,7 @@ def find_target_field(extraction_path, target_field, channel, output_to_terminal
         for line in formatted_output:
             print(line)
     else:
-        write_json_to_file(f'target_fields_mapping_{channel}.json', result)
+        write_json_to_file(f'target_fields_mapping_{channel}.json', result, 'find')
 
 
 def audit_target_fields(extraction_path, channel, output_to_terminal=True):
@@ -230,7 +231,7 @@ def audit_target_fields(extraction_path, channel, output_to_terminal=True):
         for file_path in extraction_files:
             current_target, source_fields, title = extract_target_fields(file_path)
             if current_target:
-                update_result(result, title, source_fields, current_target, file_path)
+                update_result(result, title, source_fields, current_target, file_path, [current_channel.lower()])
                 found_target = True
 
     if not found_target and output_to_terminal:
@@ -256,17 +257,22 @@ def format_target_field_results(result):
         list: A list of formatted output lines.
     """
     formatted_output = []
-
+    print(result)
     for target_field, details in result.items():
-        for channel, entries in details.get("details", {}).items():
+
             formatted_output.append(f"========================================")
-            formatted_output.append(f"  Channel: {channel}")
+            formatted_output.append(f"  Target Field: {target_field}")
             formatted_output.append(f"========================================")
-            for entry in entries.values():
-                formatted_output.append(f"    Title: {entry['title']}")
-                formatted_output.append(f"    Source Fields: {', '.join(entry['source_fields'])}")
-                formatted_output.append(f"    File Name: {entry['file_name']}")
-                formatted_output.append(f"    ----------------------------------------")
+            print(details)
+            for channel, entries in details.get("details", {}).items():
+                print("in loop")
+                print(entries)
+                formatted_output.append(f"  Channel: {channel}")
+                for title, info in entries.items():
+                    formatted_output.append(f"    Title: {title}")
+                    formatted_output.append(f"    Source Fields: {', '.join(info['source_fields'])}")
+                    formatted_output.append(f"    File Name: {info['file_name']}")
+                    formatted_output.append(f"    ----------------------------------------")
 
     return formatted_output
 
@@ -281,23 +287,27 @@ def main():
     parser = argparse.ArgumentParser(description="Script for extracting and auditing target fields in an extraction directory.")
     parser.add_argument("--find", type=str, help="Find a target field in the extraction directory. Example: --find prod_feat1234")
     parser.add_argument("--audit", action="store_true", help="Create a file with all target fields and their associated files and source fields.")
-    parser.add_argument("--channel", type=str, help="Specify the channel or channels to access. Multiple channels should be comma-separated. Example: --channel DE,ES")
+    parser.add_argument("--channel", type=str, required=True, help="Specify the channel or channels to access. Multiple channels should be comma-separated. Example: --channel mediaDE,mediaES")
     parser.add_argument("--output", choices=["terminal", "file"], default="terminal", help="Specify whether to output to terminal or file. Default: terminal")
     args = parser.parse_args()
 
+    if len(sys.argv) == 1:
+        parser.print_help()
+        exit()
+
     extraction_path = '.'  # Set to the current working directory
     target_field = args.find
-    channels = args.channel.split(',') if args.channel and args.channel.lower() != 'all' else []
+    channels = args.channel.split(',') if args.channel and args.channel.lower() else []
+
+
 
     if args.find:
-        if not channels:
-            channels = ['global']
+
         for current_channel in channels:
             find_target_field(extraction_path, target_field, current_channel, args.output == 'terminal')
 
     elif args.audit:
-        if not channels:
-            channels = ['global']
+
         for current_channel in channels:
             audit_target_fields(extraction_path, current_channel, args.output == 'terminal')
 
