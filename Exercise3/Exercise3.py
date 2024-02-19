@@ -1,4 +1,4 @@
-
+from collections import defaultdict
 
 def normalize_to_kg(value, unit):
     if unit == 'g':
@@ -13,7 +13,7 @@ def normalize_to_kg(value, unit):
 
 def process_sample_list(sample_list):
     unit_counts = defaultdict(int)
-    kg_counts = defaultdict(float)
+    discrete_value_counts = defaultdict(int)
 
     for i in range(0, len(sample_list), 2):
         value, count = sample_list[i], sample_list[i + 1]
@@ -25,17 +25,22 @@ def process_sample_list(sample_list):
             # Normalize to kg without considering count
             normalized_value = normalize_to_kg(*value.split())
             if normalized_value is not None:
-                kg_counts[unit] += normalized_value
+                # Create a discrete value by rounding to two decimal places
+                discrete_value = round(normalized_value, 2)
+                discrete_value_counts[(discrete_value, unit)] += count
 
-    return unit_counts, kg_counts
+    return unit_counts, discrete_value_counts
 
-def print_results(unit_counts, kg_counts):
+def print_results(unit_counts, discrete_value_counts):
     print("Total counts for each unit:")
     for unit, count in unit_counts.items():
         print(f'Total count of {unit}: {count}')
 
-    print("\nTotal kg counts for each unit (normalized):")
-    for unit, kg_count in kg_counts.items():
-        print(f'Total kg count of {unit}: {kg_count:.3f} kg')
+    print("\nDiscrete value counts for each unit (normalized):")
+    for (value, unit), count in discrete_value_counts.items():
+        print(f'Total count of {value} {unit}: {count}')
 
 # Example usage
+
+unit_counts, discrete_value_counts = process_sample_list(sample_list)
+print_results(unit_counts, discrete_value_counts)
