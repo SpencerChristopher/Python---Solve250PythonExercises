@@ -26,8 +26,11 @@ def process_sample_list(sample_list):
             normalized_value = normalize_to_kg(*value.split())
             if normalized_value is not None:
                 # Create a discrete value by rounding to two decimal places
-                discrete_value = round(normalized_value, 2)
-                discrete_value_counts[(discrete_value, unit)] += count
+                discrete_value = round(normalized_value, 3)  # Corrected to three decimal places
+                if unit != 'l':
+                    discrete_value_counts[(discrete_value, 'kg')] += count
+                else:
+                    discrete_value_counts[(discrete_value, unit)] += count
 
     return unit_counts, discrete_value_counts
 
@@ -36,11 +39,6 @@ def print_results(unit_counts, discrete_value_counts):
     for unit, count in unit_counts.items():
         print(f'Total count of {unit}: {count}')
 
-    print("\nDiscrete value counts for each unit (normalized):")
+    print("\nDiscrete value counts for each unit (normalized to kg):")
     for (value, unit), count in discrete_value_counts.items():
         print(f'Total count of {value} {unit}: {count}')
-
-# Example usage
-
-unit_counts, discrete_value_counts = process_sample_list(sample_list)
-print_results(unit_counts, discrete_value_counts)
